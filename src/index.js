@@ -4,9 +4,20 @@
 const pug = require('pug');
 const posthtml = require("posthtml");
 const sass = require("sass");
-const beautify = require('posthtml-beautify')
+// const beautify = require('posthtml-beautify')
+const beautify = require('js-beautify');
 const fs = require('fs');
 const path = require("path");
+
+const beautifyOptions = {
+  indent_size: 2,
+  end_with_newline: true,
+  preserve_newlines: false,
+  max_preserve_newlines: 0,
+  wrap_line_length: 0,
+  wrap_attributes_indent_size: 0,
+  unformatted: ['b', 'em']
+};
 
 (async () => {
   const inFile = process.argv[2]
@@ -15,13 +26,15 @@ const path = require("path");
   const result = await posthtml([
     sassPlugin(),
     psvPlugin(),
-    beautify({rules: {
+
+/*    beautify({rules: {
       indent: 2,
       blankLines: false,
-    }})
+    }}) */
   ])
     .process(htmlInput.toString());
-  fs.writeFileSync(outFile, result.html)
+  const html = beautify.html(result.html, beautifyOptions)
+  fs.writeFileSync(outFile, html)
 })();
 
 function psvPlugin() {
@@ -61,16 +74,18 @@ function psvPlugin() {
 }
 
 function sassPlugin() {
-    return (tree) => {
-        tree.match({ tag: 'style', attrs: { "type": "text/sass" } }, (node) => {
-            const result = sass.renderSync({data: node.content[0]});
-            const css = result.css.toString();
-            return {
-                tag: 'style',
-                attrs: { "type": "text/css" },
-                content: css
-            };
-        });
-        return tree;
+  const filter = (node) => {
+    const result = sass.renderSync({data: node.content[0]});
+    const css = result.css.toString();
+    return {
+      tag: 'style',
+      attrs: { "type": "text/css" },
+      content: css
     };
+  }
+  return (tree) => {
+    tree.match({tag: 'style', attrs: { "type": "text/sass"}}, filter);
+    tree.match({tag: 'div', attrs: { "class": "sass"}}, filter);
+    return tree;
+  };
 }
