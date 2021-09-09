@@ -1,8 +1,9 @@
 {
-  "name": "typescript-node-base",
+  "name": "pugex",
   "version": "0.1.0",
   "description": "",
   "main": "dist/index.js",
+  "bin": "dist/index.js",
   "scripts": {
     "dev": "ts-node src/index.ts",
     "dev:watch": "ts-node-dev --respawn src/index.ts",
@@ -20,6 +21,11 @@
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
     "ts-node-dev": "^1.0.0-pre.56",
+    "@types/sass": "^1.16.1",
     "typescript": "^3.9.7"
+  },
+  "dependencies": {
+    "posthtml": "^0.16.5",
+    "sass": "^1.39.0"
   }
 }
