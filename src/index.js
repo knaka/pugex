@@ -12,7 +12,7 @@ const path = require("path");
 const beautifyOptions = {
   indent_size: 2,
   end_with_newline: true,
-  preserve_newlines: false,
+  preserve_newlines: true,
   max_preserve_newlines: 0,
   wrap_line_length: 0,
   wrap_attributes_indent_size: 0,
@@ -34,6 +34,7 @@ const beautifyOptions = {
   ])
     .process(htmlInput.toString());
   const html = beautify.html(result.html, beautifyOptions)
+  // const html = result.html
   fs.writeFileSync(outFile, html)
 })();
 
@@ -85,7 +86,9 @@ function sassPlugin() {
   }
   return (tree) => {
     tree.match({tag: 'style', attrs: { "type": "text/sass"}}, filter);
+    tree.match({tag: 'style', attrs: { "type": "text/scss"}}, filter);
     tree.match({tag: 'div', attrs: { "class": "sass"}}, filter);
+    tree.match({tag: 'div', attrs: { "class": "scss"}}, filter);
     return tree;
   };
 }
