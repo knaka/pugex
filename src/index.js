@@ -22,7 +22,9 @@ const beautifyOptions = {
 (async () => {
   const inFile = process.argv[2]
   const outFile = path.join(path.dirname(inFile), path.basename(inFile, path.extname(inFile)) + ".html")
-  const htmlInput = pug.renderFile(inFile)
+  const htmlInput = pug.renderFile(inFile, {
+    "require": require,
+  })
   const result = await posthtml([
     sassPlugin(),
     psvPlugin(),
@@ -40,20 +42,51 @@ const beautifyOptions = {
 
 function psvPlugin() {
   return (tree) => {
-    tree.match({tag: 'div', attrs: {"class": "psvtable"}}, (node) => {
-      let tabhead = []
-      let tabbody = []
-      node.content[0].split("\n").forEach((line) => {
-        if (line.trim() === "") {
+    tree.match({tag: 'div', attrs: {"class": /\bpsvtable\b/}}, (node) => {
+      let cell = []
+      let row = []
+      let table = []
+      let tag = "th"
+      node.content.forEach((elem) => {
+        if (typeof(elem) === "object") {
+          cell.push(elem)
           return
         }
-        const elems = line.split("|");
-        (tabhead.length == 0? tabhead: tabbody).push({
-          tag: "tr",
-          content: elems.map((elem) => {
-            return {tag: "td", content: elem.trim()}
-          })
-        })
+        while (elem.length > 0) {
+          const i = elem.search(/[|\n]/)
+          if (i == -1) {
+            if (elem.trim().length > 0) {
+              cell.push(elem)
+            }
+            break
+          }
+          const delim = elem[i]
+          const str = elem.slice(0, i)
+          elem = elem.slice(i + 1)
+          if (cell.length > 0) {
+            if (str.trim().length > 0) {
+              cell.push(str)
+            }
+            row.push({
+              tag: tag,
+              content: cell
+            })
+          } else {
+            row.push({
+              tag: tag,
+              content: str
+            })
+          }
+          cell = []
+          if (delim === "\n") {
+            table.push({
+              tag: "tr",
+              content: row
+            })
+            row = []
+            tag = "td"
+          }
+        }
       })
       return {
         tag: 'table',
@@ -61,11 +94,11 @@ function psvPlugin() {
         content: [
           {
             tag: 'thead',
-            content: tabhead
+            content: table.slice(0, 1)
           },
           {
             tag: "tbody",
-            content: tabbody
+            content: table.slice(1)
           }
         ]
       };
@@ -87,8 +120,8 @@ function sassPlugin() {
   return (tree) => {
     tree.match({tag: 'style', attrs: { "type": "text/sass"}}, filter);
     tree.match({tag: 'style', attrs: { "type": "text/scss"}}, filter);
-    tree.match({tag: 'div', attrs: { "class": "sass"}}, filter);
-    tree.match({tag: 'div', attrs: { "class": "scss"}}, filter);
+    tree.match({tag: 'div', attrs: { "class": /\bsass\b/}}, filter);
+    tree.match({tag: 'div', attrs: { "class": /\bscss\b/}}, filter);
     return tree;
   };
 }
