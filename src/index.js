@@ -47,6 +47,12 @@ function psvPlugin() {
       let row = []
       let table = []
       let tag = "th"
+      if (node.content.length > 0 && typeof(node.content[node.content.length-1]) == "string") {
+        const s = node.content[node.content.length-1]
+        if (s.length > 0 && s[s.length-1] != "\n") {
+          node.content[node.content.length-1] += "\n"
+        }
+      }
       node.content.forEach((elem) => {
         if (typeof(elem) === "object") {
           cell.push(elem)
@@ -54,7 +60,7 @@ function psvPlugin() {
         }
         while (elem.length > 0) {
           const i = elem.search(/[|\n]/)
-          if (i == -1) {
+          if (i === -1) {
             if (elem.trim().length > 0) {
               cell.push(elem)
             }
@@ -88,6 +94,18 @@ function psvPlugin() {
           }
         }
       })
+      if (cell.length > 0) {
+        row.push({
+          tag: tag,
+          content: cell
+        })
+      }
+      if (row.length > 0) {
+        table.push({
+          tag: "tr",
+          content: row
+        })
+      }
       return {
         tag: 'table',
         attrs: node.attrs,
